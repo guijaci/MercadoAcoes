@@ -23,7 +23,7 @@ public class ServerInitializer extends Application {
 
         ITransactionRoom transactionRoom = new DefaultTransactionRoom()
                 .setManager(new StockManager()
-                    .setMatcher(new AveragePriceMatcher()));
+                .setMatcher(new AveragePriceMatcher()));
         Registry nameService = LocateRegistry.createRegistry(1099);
         nameService.rebind(ITransactionRoom.class.getName() + "/DefaultRoom", transactionRoom);
 

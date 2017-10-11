@@ -2,26 +2,27 @@ package edu.utfpr.guilhermej.sd1.av2.model;
 
 import edu.utfpr.guilhermej.sd1.av2.services.IStockOrderMatcher;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class StockManager {
     private IStockOrderMatcher matcher;
 
-    private Map<String, List<StockOrder>> buyOrders;
-    private Map<String, List<StockOrder>> sellOrders;
-    private List<StockOrder> allOrders;
+    private final Map<String, List<StockOrder>> buyOrders;
+    private final Map<String, List<StockOrder>> sellOrders;
+    private final List<StockOrder> allOrders;
 
-    private Map<Integer, Consumer<StockEvent>> stockEventListener;
+    private final Map<String, Thread> quotationMonitoringMap;
+
+    private final Map<Consumer<StockEvent>, Consumer<StockEvent>> stockEventListener;
 
     public StockManager(){
         buyOrders = new HashMap<>();
         sellOrders = new HashMap<>();
         allOrders = new ArrayList<>();
+
+        quotationMonitoringMap = new HashMap<>();
 
         stockEventListener = new HashMap<>();
     }
@@ -35,17 +36,25 @@ public class StockManager {
         return this;
     }
 
-    void addListener(Consumer<StockEvent> listener){
-        int key = listener.hashCode();
-        stockEventListener.put(key, listener::accept);
+    public void addListener(Consumer<StockEvent> listener) {
+        synchronized (stockEventListener) {
+            stockEventListener.put(listener, listener::accept);
+        }
     }
 
-    void addListener(Consumer<StockEvent> listener, Predicate<StockEvent> filter){
-        int key = listener.hashCode();
-        stockEventListener.put(key, event -> {
-            if(filter.test(event))
-                listener.accept(event);
-        });
+    public void addListener(Consumer<StockEvent> listener, Predicate<StockEvent> filter) {
+        synchronized (stockEventListener) {
+            stockEventListener.put(listener, event -> {
+                if (filter.test(event))
+                    listener.accept(event);
+            });
+        }
+    }
+
+    public void removeListener(Consumer<StockEvent> listener){
+        synchronized (stockEventListener) {
+            stockEventListener.remove(listener);
+        }
     }
 
     public void addOrder(StockOrder stockOrder) {
@@ -116,30 +125,72 @@ public class StockManager {
         }
     }
 
+    public void startMonitoring(String enterprise){
+        synchronized (quotationMonitoringMap) {
+            if (!quotationMonitoringMap.containsKey(enterprise)) {
+                Thread monitoring = new Thread(() -> {
+                    Random random = new Random();
+                    StockQuotation quotation = new StockQuotation()
+                            .setEnterprise(enterprise)
+                            .setPrice(((double) random.nextInt(10000)) / 100);
+                    StockQuotation previous = new StockQuotation()
+                            .setEnterprise(enterprise)
+                            .setPrice(quotation.getPrice());
+                    while (quotationMonitoringMap.containsKey(enterprise)) {
+                        try {
+                            launchQuotationStockEvent(quotation.setPrice(randomFlutuation(random, quotation.getPrice())), previous);
+                            previous.setPrice(quotation.getPrice());
+                            Thread.sleep(random.nextInt(1000) + 500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                monitoring.setName(enterprise + "StockMonitor");
+                monitoring.start();
+                quotationMonitoringMap.put(enterprise, monitoring);
+            }
+        }
+    }
+
+    public void stopMonitoring(String enterprise){
+        synchronized (quotationMonitoringMap) {
+            if (quotationMonitoringMap.containsKey(enterprise))
+                quotationMonitoringMap.remove(enterprise);
+        }
+    }
+
+    private double randomFlutuation(Random random, Double price) {
+        return Math.abs(price + random.nextGaussian()*0.2*price + random.nextGaussian());
+    }
+
     private void launchTradedStockEvent(StockOrder bought, StockOrder sold, Stocks tradedStock) {
-        stockEventListener.forEach((k,v) -> v.accept(StockEvent.createTradedStockOrderEvent(bought, sold, tradedStock,this)));
+        synchronized (stockEventListener) {
+            stockEventListener.values().parallelStream().forEach(v -> v.accept(StockEvent.createTradedStockOrderEvent(bought, sold, tradedStock, this)));
+        }
     }
 
     private void launchUpdatedStockEvent(StockOrder newOrder, StockOrder prevOrder) {
-        stockEventListener.forEach((k,v)-> v.accept(StockEvent.createUpdatedStockOrderEvent(prevOrder, newOrder, this)));
+        synchronized (stockEventListener) {
+            stockEventListener.values().parallelStream().forEach(v -> v.accept(StockEvent.createUpdatedStockOrderEvent(prevOrder, newOrder, this)));
+        }
     }
 
     private void launchRemovedStockEvent(StockOrder stockOrder) {
-        stockEventListener.forEach((k,v) -> v.accept(StockEvent.createRemovedStockOrderEvent(stockOrder, this)));
+        synchronized (stockEventListener) {
+            stockEventListener.values().parallelStream().forEach(v -> v.accept(StockEvent.createRemovedStockOrderEvent(stockOrder, this)));
+        }
     }
 
     private void launchAddedStockEvent(StockOrder stockOrder) {
-        stockEventListener.forEach((k, v) -> v.accept(StockEvent.createAddedStockOrderEvent(stockOrder, this)));
+        synchronized (stockEventListener) {
+            stockEventListener.values().parallelStream().forEach(v -> v.accept(StockEvent.createAddedStockOrderEvent(stockOrder, this)));
+        }
     }
 
-    private static void removeOrder(StockOrder stockOrder, Map<String, List<StockOrder>> ordersMap) {
-        String enterprise = stockOrder.getStocks().getEnterprise();
-        List<StockOrder> matchingList = null;
-        if(ordersMap.containsKey(enterprise)) {
-            matchingList = ordersMap.get(enterprise);
-            matchingList.remove(stockOrder);
-            if (matchingList.isEmpty())
-                ordersMap.remove(enterprise);
+    private void launchQuotationStockEvent(StockQuotation quotation, StockQuotation previous) {
+        synchronized (stockEventListener) {
+            stockEventListener.values().parallelStream().forEach(v -> v.accept(StockEvent.createQuotationStockOrderEvent(quotation, previous)));
         }
     }
 
@@ -153,5 +204,16 @@ public class StockManager {
         else
             orderList = ordersMap.get(enterprise);
         orderList.add(stockOrder);
+    }
+
+    private static void removeOrder(StockOrder stockOrder, Map<String, List<StockOrder>> ordersMap) {
+        String enterprise = stockOrder.getStocks().getEnterprise();
+        List<StockOrder> matchingList = null;
+        if(ordersMap.containsKey(enterprise)) {
+            matchingList = ordersMap.get(enterprise);
+            matchingList.remove(stockOrder);
+            if (matchingList.isEmpty())
+                ordersMap.remove(enterprise);
+        }
     }
 }

@@ -9,6 +9,8 @@ public interface ITransactionRoom extends Remote {
     void addListener(IServerListener<StockEvent> listener) throws RemoteException;
     void addListener(Consumer<StockEvent> listener) throws RemoteException;
     void addListener(Consumer<StockEvent> listener, Predicate<StockEvent> filter) throws RemoteException;
+    void startQuotationMonitoring(String enterprise) throws RemoteException;
+    void stopQuotationMonitoring(String enterprise) throws RemoteException;
     StockOrder createBuyOrder(Stockholder placer, Stocks wantedStocks) throws RemoteException;
     StockOrder createSellOrder(Stockholder placer, Stocks sellingStocks) throws RemoteException;
 }

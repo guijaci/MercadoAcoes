@@ -61,6 +61,7 @@
                           <buttons>
                             <Button mnemonicParsing="false" onAction="#onRemoveSubscription" text="Remove Subscription" visible="false" />
                               <Button mnemonicParsing="false" onAction="#onCreateSubscription" text="Create Subscription" />
+                              <Button mnemonicParsing="false" onAction="#onStartQuotation" text="Stock Quotation" />
                           </buttons>
                            <BorderPane.margin>
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

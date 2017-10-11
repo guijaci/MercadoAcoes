@@ -70,17 +70,17 @@ public class ServerUiController extends TransactionRoomController {
                     event -> Platform.runLater(() -> {
                         switch (event.getEventType()) {
                         case ADDED:
-                            StockOrder addedOrder = event.getNewValue();
+                            StockOrder addedOrder = event.getNewOrder();
                             stockOrderPropertyMap.put(addedOrder.getId(), setProperties(new CellStockOrderProperties(), addedOrder));
                             orderList.add(addedOrder);
                             break;
                         case REMOVED:
-                            StockOrder removedOrder = event.getPreviousValue();
+                            StockOrder removedOrder = event.getPreviousOrder();
                             stockOrderPropertyMap.remove(removedOrder.getId());
                             orderList.remove(removedOrder);
                             break;
                         case UPDATED:
-                            StockOrder newValue = event.getNewValue();
+                            StockOrder newValue = event.getNewOrder();
                             if(stockOrderPropertyMap.containsKey(newValue.getId()))
                                 setProperties(stockOrderPropertyMap.get(newValue.getId()), newValue);
                             break;

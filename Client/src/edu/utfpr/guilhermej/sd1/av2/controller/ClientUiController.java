@@ -8,6 +8,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 
 import java.rmi.RemoteException;
 import java.util.HashMap;
@@ -127,10 +128,10 @@ public class ClientUiController extends TransactionRoomController {
     public void onCreateSubscription(ActionEvent actionEvent) {
         if(eventDialog == null)
             eventDialog = EventDialogController.loadNewWindow()
-                    .setBuyEventFilter(event -> event.getEventType() == StockEvent.StockEventType.ADDED && event.getNewValue().isBuying())
+                    .setBuyEventFilter(event -> event.getEventType() == StockEvent.StockEventType.ADDED && event.getNewOrder().isBuying())
                     .setBuyEventListener(event -> Platform.runLater(() ->
                             eventList.add(getBuyEventDescription(event))))
-                    .setSellEventFilter(event -> event.getEventType() == StockEvent.StockEventType.ADDED && event.getNewValue().isSelling())
+                    .setSellEventFilter(event -> event.getEventType() == StockEvent.StockEventType.ADDED && event.getNewOrder().isSelling())
                     .setSellEventListener(event -> Platform.runLater(() ->
                             eventList.add(getSellEventDescription(event))))
                     .setTradeEventFilter(event -> event.getEventType() == StockEvent.StockEventType.TRADED)
@@ -160,20 +161,39 @@ public class ClientUiController extends TransactionRoomController {
 
     }
 
+    public void onStartQuotation(ActionEvent actionEvent) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Stock StockQuotation");
+        dialog.setHeaderText("To view the quotation, enter the enterprise name.");
+        dialog.setContentText("Enterprise:");
+        dialog.getEditor().setPromptText("Enter company name...");
+
+        dialog.showAndWait().ifPresent(name -> {
+            StockQuotationController stockQuotationController = StockQuotationController
+                    .loadNewWindow(name)
+                    .setTransactionRoom(transactionRoom);
+            Stage stage = stockQuotationController.getStage();
+            if(stage != null) {
+                stage.show();
+                stage.requestFocus();
+            }
+        });
+    }
+
     private String getBuyEventDescription(StockEvent event) {
         return String.format("%s wants to buy %d %s stocks for $%01.02f",
-        event.getNewValue().getOrderPlacer().getName(),
-        event.getNewValue().getStocks().getQuantity(),
-        event.getNewValue().getStocks().getEnterprise(),
-        event.getNewValue().getStocks().getPrice());
+        event.getNewOrder().getOrderPlacer().getName(),
+        event.getNewOrder().getStocks().getQuantity(),
+        event.getNewOrder().getStocks().getEnterprise(),
+        event.getNewOrder().getStocks().getPrice());
     }
 
     private String getSellEventDescription(StockEvent event) {
         return String.format("%s wants to sell %d %s stocks for $%01.02f",
-                event.getNewValue().getOrderPlacer().getName(),
-                event.getNewValue().getStocks().getQuantity(),
-                event.getNewValue().getStocks().getEnterprise(),
-                event.getNewValue().getStocks().getPrice());
+                event.getNewOrder().getOrderPlacer().getName(),
+                event.getNewOrder().getStocks().getQuantity(),
+                event.getNewOrder().getStocks().getEnterprise(),
+                event.getNewOrder().getStocks().getPrice());
     }
 
     private String getTradeEventDescription(StockEvent event) {
@@ -194,7 +214,7 @@ public class ClientUiController extends TransactionRoomController {
                         System.out.println("Event: " + stockEvent.getEventType());
                         switch (stockEvent.getEventType()){
                         case ADDED:
-                            StockOrder addedOrder = stockEvent.getNewValue();
+                            StockOrder addedOrder = stockEvent.getNewOrder();
                             stockOrderPropertyMap.put(addedOrder.getId(), setProperties(new CellStockOrderProperties(), addedOrder));
                             orderList.add(addedOrder);
                             if(addedOrder.isBuying())
@@ -203,12 +223,12 @@ public class ClientUiController extends TransactionRoomController {
                                 eventList.add(getSellEventDescription(stockEvent));
                             break;
                         case REMOVED:
-                            StockOrder removedOrder = stockEvent.getPreviousValue();
+                            StockOrder removedOrder = stockEvent.getPreviousOrder();
                             stockOrderPropertyMap.remove(removedOrder.getId());
                             orderList.remove(removedOrder);
                             break;
                         case UPDATED:
-                            StockOrder newValue = stockEvent.getNewValue();
+                            StockOrder newValue = stockEvent.getNewOrder();
                             if(stockOrderPropertyMap.containsKey(newValue.getId()))
                                 setProperties(stockOrderPropertyMap.get(newValue.getId()), newValue);
                             break;

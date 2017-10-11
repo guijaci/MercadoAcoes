@@ -24,20 +24,29 @@ public class DefaultTransactionRoom extends UnicastRemoteObject implements ITran
 
     @Override
     public void addListener(IServerListener<StockEvent> listener) throws RemoteException {
-        manager.addListener(event -> {
-            try {
-                listener.accept(event.setObservable(this));
-            } catch (RemoteException e) {
-                e.printStackTrace();
+        Consumer<StockEvent> listenerCallback = new Consumer<StockEvent>() {
+            @Override
+            public void accept(StockEvent event) {
+                try {
+                    listener.accept(event.setObservable(DefaultTransactionRoom.this));
+                } catch (RemoteException e) {
+                    System.out.printf("Remote Exception: " + e.getMessage());
+                    Thread remove = new Thread(() -> manager.removeListener(this));
+                    remove.start();
+                }
             }
-        }, event -> {
+        };
+        Predicate<StockEvent> filterCallback = event -> {
             try {
-                return listener.test(event.setObservable(this));
+                return listener.test(event.setObservable(DefaultTransactionRoom.this));
             } catch (RemoteException e) {
-                System.out.printf("Remote Exception: "+e.getMessage());
+                System.out.printf("Remote Exception: " + e.getMessage());
+                Thread remove = new Thread(() -> manager.removeListener(listenerCallback));
+                remove.start();
             }
             return false;
-        });
+        };
+        manager.addListener(listenerCallback, filterCallback);
     }
 
     @Override
@@ -48,6 +57,16 @@ public class DefaultTransactionRoom extends UnicastRemoteObject implements ITran
     @Override
     public void addListener(Consumer<StockEvent> listener, Predicate<StockEvent> filter) throws RemoteException{
         manager.addListener(event -> listener.accept(event.setObservable(this)), filter);
+    }
+
+    @Override
+    public void startQuotationMonitoring(String enterprise) throws RemoteException {
+        manager.startMonitoring(enterprise);
+    }
+
+    @Override
+    public void stopQuotationMonitoring(String enterprise) throws RemoteException{
+        manager.stopMonitoring(enterprise);
     }
 
     @Override
