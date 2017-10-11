@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<GridPane alignment="CENTER" hgap="5.0" prefHeight="129.0" prefWidth="251.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.utfpr.guilhermej.sd1.av2.controller.EventDialogController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="76.0" minWidth="10.0" prefWidth="64.0" />
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="174.0" minWidth="10.0" prefWidth="152.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints maxHeight="55.0" minHeight="0.0" prefHeight="30.0" vgrow="SOMETIMES" />
+      <RowConstraints maxHeight="82.0" minHeight="0.0" prefHeight="64.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <Label text="Enterprise:" />
+      <Label text="Event Type:" GridPane.rowIndex="1" />
+      <TextField fx:id="enterpriseTextField" promptText="Company to monitor..." GridPane.columnIndex="1" />
+      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+         <children>
+            <RadioButton fx:id="tradedRadioButton" mnemonicParsing="false" selected="true" text="Stocks Traded">
+               <toggleGroup>
+                  <ToggleGroup fx:id="eventTypeRadioGroup" />
+               </toggleGroup>
+            </RadioButton>
+            <RadioButton fx:id="sellRadioButton" mnemonicParsing="false" text="Sell Stocks Order" toggleGroup="$eventTypeRadioGroup" />
+            <RadioButton fx:id="buyRadioButton" mnemonicParsing="false" text="Buy Stocks Order" toggleGroup="$eventTypeRadioGroup" />
+         </children>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+   </padding>
+</GridPane>
