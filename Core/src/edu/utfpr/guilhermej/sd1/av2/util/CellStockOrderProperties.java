@@ -1,8 +1,12 @@
-package edu.utfpr.guilhermej.sd1.av2.model;
+package edu.utfpr.guilhermej.sd1.av2.util;
 
-import edu.utfpr.guilhermej.sd1.av2.controller.ServerUiController;
 import javafx.beans.property.SimpleStringProperty;
 
+/**
+ * Esta classe auxilia exibição em {@link javax.swing.text.TableView} de {@link edu.utfpr.guilhermej.sd1.av2.model.StockOrder}.
+ * Ela contem propriedades observaveis (como {@link SimpleStringProperty}) que {@link javax.swing.text.TableView}
+ * necessita para identificar atualização de dados
+ */
 public class CellStockOrderProperties {
     private SimpleStringProperty orderPlacer;
     private SimpleStringProperty orderType;

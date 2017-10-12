@@ -2,6 +2,10 @@ package edu.utfpr.guilhermej.sd1.av2.model;
 
 import java.io.Serializable;
 
+/**
+ * Evento lançado quando ordem de ação é criada, removida, atualizada,
+ * quando houve uma transação ou o valor de cotação foi alterado
+ */
 public class StockEvent implements Serializable{
     private Object observable;
     private StockEventType eventType;
@@ -24,6 +28,12 @@ public class StockEvent implements Serializable{
         newQuotation = null;
     }
 
+    /**
+     * Cria novo evento de ordem de ação criada
+     * @param stockOrder ordem criada
+     * @param triggerer objeto que lançou o evento
+     * @return evento de ordem de ação criada
+     */
     public static StockEvent createAddedStockOrderEvent(StockOrder stockOrder, Object triggerer){
         return new StockEvent()
             .setEventType(StockEventType.ADDED)
@@ -31,6 +41,12 @@ public class StockEvent implements Serializable{
             .setObservable(triggerer);
     }
 
+    /**
+     * Cria novo evento de ordem de ação removida
+     * @param stockOrder ordem removida
+     * @param triggerer objeto que lançou o evento
+     * @return evento de ordem de ação removida
+     */
     public static StockEvent createRemovedStockOrderEvent(StockOrder stockOrder, Object triggerer){
         return new StockEvent()
                 .setEventType(StockEventType.REMOVED)
@@ -38,6 +54,13 @@ public class StockEvent implements Serializable{
                 .setObservable(triggerer);
     }
 
+    /**
+     * Cria novo evento de ordem de ação atualizada
+     * @param previousValue valor antigo da ordem de ação
+     * @param newValue novo valor da ordem de ação
+     * @param triggerer objeto que lançou o evento
+     * @return evento de ordem de ação alterada
+     */
     public static StockEvent createUpdatedStockOrderEvent(StockOrder previousValue, StockOrder newValue, Object triggerer){
         return new StockEvent()
                 .setEventType(StockEventType.UPDATED)
@@ -46,6 +69,14 @@ public class StockEvent implements Serializable{
                 .setObservable(triggerer);
     }
 
+    /**
+     * Cria novo evento de transação de ações
+     * @param buyOrder ordem de compra de ação da transação
+     * @param sellOrder ordem de venda de ação da transação
+     * @param tradedStock ações transacionadas
+     * @param triggerer objeto que lançou o evento
+     * @return evento de transação de ações
+     */
     public static StockEvent createTradedStockOrderEvent(StockOrder buyOrder, StockOrder sellOrder, Stocks tradedStock, Object triggerer){
         return new StockEvent()
             .setEventType(StockEventType.TRADED)
@@ -55,13 +86,23 @@ public class StockEvent implements Serializable{
             .setObservable(triggerer);
     }
 
+    /** Cria novo evento de cotação de ação
+     * @param quotation novo valor de cotação
+     * @param previous valor antigo de cotação
+     * @return evento de cotação de ação
+     */
     public static StockEvent createQuotationStockOrderEvent(StockQuotation quotation, StockQuotation previous){
         return new StockEvent()
                 .setEventType(StockEventType.QUOTATION)
                 .setNewQuotation(quotation)
                 .setPreviousQuotation(previous);
     }
-    
+
+    /**
+     * Verifica se determinado acionista tem participou de alguma ordem de ação deste evento.
+     * @param holder acionista para verificação
+     * @return true se acionista possui participou de alguma ordem de ação deste evento, false caso contrário
+     */
     public boolean isParticipant(Stockholder holder){
         if(holder == null)
             return false;
@@ -86,6 +127,13 @@ public class StockEvent implements Serializable{
         return false;
     }
 
+    /**
+     * Verifica se o evento se relaciona à alguma empresa.
+     * A empresa pode se relacionar com o evento se as ações vendidas pelas ordens que
+     * causaram este evento são desta empresa, ou se houve uma atualização na cotação das ações desta empresa
+     * @param enterprise empresa para verificação
+     * @return true se a empresa se relaciona com este evento, false caso contrário
+     */
     public boolean isFromEnterprise(String enterprise) {
         if(enterprise == null)
             return false;
@@ -194,6 +242,9 @@ public class StockEvent implements Serializable{
         return this;
     }
 
+    /**
+     * Enumeração descreve possível tipos de eventos
+     */
     public enum StockEventType {
         ADDED, REMOVED, UPDATED, TRADED, QUOTATION
     }

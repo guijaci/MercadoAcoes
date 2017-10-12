@@ -2,6 +2,9 @@ package edu.utfpr.guilhermej.sd1.av2.model;
 
 import java.io.Serializable;
 
+/**
+ * Representação de ações, possui preço, quantidade, e empresa da relacionada
+ */
 public class Stocks implements Serializable{
     protected Long version = 0L;
     private Double price;
@@ -9,8 +12,15 @@ public class Stocks implements Serializable{
 
     private String enterprise;
 
+    /**
+     * Constroi novas ações
+     */
     public Stocks(){}
 
+    /**
+     * Contrutor de cópia para ações
+     * @param m ações para copiar
+     */
     public Stocks(Stocks m) {
         price = m.getPrice();
         quantity = m.getQuantity();

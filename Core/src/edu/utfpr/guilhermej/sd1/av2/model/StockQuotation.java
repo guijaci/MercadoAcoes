@@ -2,6 +2,9 @@ package edu.utfpr.guilhermej.sd1.av2.model;
 
 import java.io.Serializable;
 
+/**
+ * Representação de uma cotação de ação, contém o valor da cotação e a empresa cotada
+ */
 public class StockQuotation implements Serializable{
     private String enterprise;
     private Double price;
